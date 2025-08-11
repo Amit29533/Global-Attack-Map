@@ -1,0 +1,53 @@
+# Deployment & Setup Instructions
+
+This guide helps you deploy the Ubuntu VM and configure Azure Sentinel to collect logs for the Global Attack Research Project.
+
+---
+
+## Prerequisites
+
+- Azure subscription with permissions to create VMs and Log Analytics workspaces.
+- Azure CLI installed locally or use [Azure Cloud Shell](https://shell.azure.com/).
+- Basic knowledge of Azure Portal and KQL.
+
+---
+
+## Step 1: Deploy Ubuntu VM
+
+1. Use the ARM template located in `azure-ubuntu-vm-template.json` or deploy manually:
+
+```bash
+az group create --name attack-research-rg --location eastus
+az deployment group create --resource-group attack-research-rg --template-file deployment/azure-ubuntu-vm-template.json
+Ensure the VM has a public IP and SSH port (22) open to receive incoming connections.
+
+Step 2: Set Up Azure Sentinel & Log Analytics
+Create a Log Analytics workspace or use an existing one:
+
+bash
+Copy
+Edit
+az monitor log-analytics workspace create --resource-group attack-research-rg --workspace-name attack-research-law
+Enable Azure Sentinel on the Log Analytics workspace via Portal or CLI.
+
+Step 3: Connect VM Logs to Azure Sentinel
+In the Azure Portal, navigate to your VM's Diagnostics settings.
+
+Enable and configure sending Syslog and Security logs to the Log Analytics workspace.
+
+Step 4: Import KQL Queries & Workbook
+Open Azure Sentinel and go to Logs.
+
+Paste or import KQL queries from the kql-queries/ folder.
+
+Import the attack map workbook JSON from kql-queries/attack-map-workbook.json to visualize global attack sources.
+
+Step 5: Monitor and Analyze
+Use the dashboards to monitor attack traffic and patterns.
+
+Adjust queries and workbooks to refine threat detection.
+
+Notes
+Ensure the environment is strictly isolated to avoid any risk.
+
+Review Azure pricing to monitor costs during testing.

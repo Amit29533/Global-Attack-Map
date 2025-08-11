@@ -1,0 +1,33 @@
+{
+  "type": 3,
+  "content": {
+    "version": "KqlItem/1.0",
+    "query": "let GeoIPDB_FULL = _GetWatchlist(\"geoip\");\nlet LinuxSSHLogs = Syslog;\nLinuxSSHLogs \n| where TimeGenerated > ago(30d)\n| where Facility in (\"auth\", \"authpriv\") \n| where ProcessName == \"sshd\"\n| where SyslogMessage has_any (\"Failed\", \"Invalid user\", \"Accepted\")\n// Extract source IP address\n| extend sourceIP = extract(@\"from\\s+([\\d\\.]+)\\s+port\", 1, SyslogMessage)\n| where isnotempty(sourceIP)\n// Fix username parsing - remove \"invalid user\" prefix\n| extend rawUsername = extract(@\"for\\s+(?:invalid user\\s+)?(\\w+)\\s+from\", 1, SyslogMessage)\n| extend username = case(\n    isempty(rawUsername), \"unknown\",\n    rawUsername == \"\", \"unknown\", \n    rawUsername\n)\n// Event type classification\n| extend eventType = case(\n    SyslogMessage contains \"Accepted\", \"Success\",\n    SyslogMessage contains \"Failed\", \"Failed\",\n    SyslogMessage contains \"Invalid user\", \"Invalid\",\n    \"Other\"\n)\n| where eventType in (\"Failed\", \"Invalid\")\n| order by TimeGenerated desc\n// GeoIP lookup using your watchlist\n| evaluate ipv4_lookup(GeoIPDB_FULL, sourceIP, network)\n| summarize \n    FailureCount = count(),\n    UniqueUsers = dcount(username),\n    FirstSeen = min(TimeGenerated),\n    LastSeen = max(TimeGenerated)\n    by sourceIP, latitude, longitude, cityname, countryname\n| project \n    FailureCount, \n    AttackerIp = sourceIP, \n    latitude, \n    longitude, \n    city = cityname, \n    country = countryname,\n    UniqueUsers,\n    FirstSeen,\n    LastSeen,\n    friendly_location = strcat(cityname, \" (\", countryname, \")\");",
+    "size": 3,
+    "timeContext": {
+      "durationMs": 2592000000
+    },
+    "queryType": 0,
+    "resourceType": "microsoft.operationalinsights/workspaces",
+    "visualization": "map",
+    "mapSettings": {
+      "locInfo": "LatLong",
+      "locInfoColumn": "countryname",
+      "latitude": "latitude", 
+      "longitude": "longitude",
+      "sizeSettings": "FailureCount",
+      "sizeAggregation": "Sum",
+      "opacity": 0.8,
+      "labelSettings": "friendly_location",
+      "legendMetric": "FailureCount",
+      "legendAggregation": "Sum",
+      "itemColorSettings": {
+        "nodeColorField": "FailureCount",
+        "colorAggregation": "Sum",
+        "type": "heatmap",
+        "heatmapPalette": "greenRed"
+      }
+    }
+  },
+  "name": "SSH Attack Geographic Map"
+}

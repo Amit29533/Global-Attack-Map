@@ -60,7 +60,7 @@ This project documents a cybersecurity experiment involving exposing an Ubuntu V
 
 ## Screenshots
 
-![Global Attack Map]( <img width="1668" height="730" alt="image" src="https://github.com/user-attachments/assets/2709cb18-d65e-41a4-8723-14f918c68cf0" /> )
+![Global Attack Map]( {F28327A7-6A5F-4854-B64D-457EF26C96C4}.png )
 
 ---
 

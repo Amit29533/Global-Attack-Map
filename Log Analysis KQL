@@ -1,0 +1,12 @@
+Syslog 
+| where Facility in ("auth", "authpriv") 
+| where ProcessName == "sshd" 
+| parse SyslogMessage with * "from " ipAddress:string " port" * 
+| extend result = iff(SyslogMessage contains "Accepted", "Success", 
+                 iff(SyslogMessage contains "Failed", "Failure", "Other"))
+| parse SyslogMessage with * "for " username:string " from" * 
+| project TimeGenerated, vmName = Computer, result, username, ipAddress
+| where isnotempty(ipAddress)
+| evaluate ipv4_lookup(_GetWatchlist('geoip'), ipAddress, network, return_unmatched=true)
+| project TimeGenerated, vmName, result, username, ipAddress, 
+          country = countryname, latitude, longitude 
